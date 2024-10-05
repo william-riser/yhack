@@ -1,11 +1,13 @@
 import './index.css'
-import Map from "./components/Map.tsx";
+import CameraOCR from "./components/CameraOCR.tsx";
 
 function App() {
 
   return (
     <>
-        <Map />
+       <div className={"bg-blue-100"}>
+       <CameraOCR />
+       </div>
 
     </>
   )
