@@ -1,12 +1,11 @@
 import './index.css'
+import Map from "./components/Map.tsx";
 
 function App() {
 
   return (
     <>
-        <div className={"bg-blue-200"}>
-            <h1 className={"text-2xl text-center"}>Hello Vite + React!</h1>
-        </div>
+        <Map />
 
     </>
   )
