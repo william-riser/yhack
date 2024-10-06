@@ -1,16 +1,20 @@
-import './index.css'
-import CameraOCR from "./components/CameraOCR.tsx";
+import { Routes, Route } from 'react-router-dom';
+import Home from './pages/Home';
+import './index.css';
+import Profile from "./pages/Profile.tsx";
+import SignUp from "./pages/SignUp.tsx";
 
 function App() {
+    return (
+        <div>
+            <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/SignUp" element={<SignUp />} />
 
-  return (
-    <>
-       <div className={"bg-blue-100"}>
-       <CameraOCR />
-       </div>
-
-    </>
-  )
+            </Routes>
+        </div>
+    );
 }
 
-export default App
+export default App;
