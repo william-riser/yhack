@@ -1,8 +1,8 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 interface receipt {
-    text: string;
+    score: string;
     date : string;
 }
 
@@ -17,12 +17,27 @@ const Profile: React.FC = () => {
     const location = useLocation();
     const user: User | null = location.state?.user || JSON.parse(localStorage.getItem('user') || 'null');
     const navigate = useNavigate();
-
+    const [averageScore, setAverageScore] = React.useState<number>(0);
 
     const handleAddReceipt = () => {
         console.log('Add receipt clicked');
         navigate('/AddReceipt');
     };
+
+    const calculateAverageScore = () => {
+        let total = 0;
+        if (user?.receipts.length == 0) return;
+        user?.receipts.forEach(receipt => {
+            total += parseInt(receipt.score);
+        });
+        const average = total / user?.receipts.length;
+        setAverageScore(average);
+    }
+
+    useEffect(() => {
+        calculateAverageScore();
+    }
+    , [calculateAverageScore]);
 
     return (
         <div className="flex justify-center items-center min-h-screen bg-gray-100">
@@ -32,9 +47,7 @@ const Profile: React.FC = () => {
                     <div>
                         <p className="text-gray-700">Name: {user.name}</p>
                         <p className="text-gray-700">Email: {user.email}</p>
-                        {user.receipts.map((receipt, i) => (
-                            <p key={i} className="text-gray-700"><span className={"font-bold bg-blue-100"}>Receipt {i + 1}:</span> {receipt.text}</p>
-                        ))}
+                        <p className="text-gray-700">Average Score: {averageScore}</p>
 
                     </div>
                 ) : (
