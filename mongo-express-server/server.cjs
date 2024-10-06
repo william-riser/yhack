@@ -70,10 +70,10 @@ app.post('/login', async (req, res) => {
 
 app.post('/addReceipt', async (req, res) => {
     console.log('Request Body:', req.body); // Add this line for debugging
-    const { email, text } = req.body; // Expecting email and text in the request body
+    const { email, score } = req.body; // Expecting email and text in the request body
 
     // Check if email and text are present
-    if (!email || !text) {
+    if (!email || !score) {
         return res.status(400).json({ message: 'Email and text are required' });
     }
 
@@ -87,7 +87,7 @@ app.post('/addReceipt', async (req, res) => {
         }
         console.log(user)
         // Add the receipt (receipt text) to the user's receipts array
-        user.receipts.push({ text, date: new Date() });  // Assuming receipts contain 'text' and 'date'
+        user.receipts.push({ score, date: new Date() });  // Assuming receipts contain 'text' and 'date'
         console.log(user.receipts)
 
         // Save the updated user with the new receipt
