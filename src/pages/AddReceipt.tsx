@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import Tesseract from 'tesseract.js';
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import axios from 'axios';
 
 interface User {
@@ -26,6 +26,7 @@ const ReceiptOCR: React.FC = () => {
     const [saving, setSaving] = useState<boolean>(false);
     const [isSaved, setIsSaved] = useState<boolean>(false);
     const [message, setMessage] = useState<string>('');
+    const navigate = useNavigate();
 
     const openAiApiKey = import.meta.env.VITE_OPENAI_API_KEY;
 
@@ -168,9 +169,17 @@ const ReceiptOCR: React.FC = () => {
             });
     }
 
+    const handleProfile = () => {
+        navigate('/profile');
+    }
 
     return (
         <div className="flex flex-col items-center justify-center bg-white p-6">
+            <div>
+                <button onClick={handleProfile}>
+                    Profile
+                </button>
+            </div>
             <h1 className="text-3xl font-bold mb-6 text-gray-800">Receipt OCR</h1>
 
             <p className="text-gray-600 mb-6">Drag & drop a file to upload or choose from your computer.</p>

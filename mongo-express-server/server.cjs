@@ -102,6 +102,31 @@ app.post('/addReceipt', async (req, res) => {
 });
 
 
+app.get('/getTopUsers', async (req, res) => {
+    try {
+        // Calculate the average score for each user, then return top 10
+        const topUsers = await User.aggregate([
+            {
+                $project: {
+                    name: 1,
+                    email: 1,
+                    averageScore: { $avg: '$receipts.score' },
+                },
+            },
+            { $sort: { averageScore: -1 } },
+            { $limit: 10 },
+        ]);
+
+
+
+        res.status(200).json({ message: 'Top users retrieved successfully', users: topUsers });
+    } catch (error) {
+        console.error('Error getting top users:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+
+}
+);
 
 // Start the server
 app.listen(port, () => {

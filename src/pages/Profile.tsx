@@ -39,8 +39,20 @@ const Profile: React.FC = () => {
     }
     , [calculateAverageScore]);
 
+    const handleLogout = () => {
+        localStorage.removeItem('user');
+        navigate('/');
+    }
+
+    function toLeaderboard() {
+        navigate('/Leaderboard');
+    }
+
     return (
         <div className="flex justify-center items-center min-h-screen bg-gray-100">
+            <button onClick={handleLogout}>
+                Logout
+            </button>
             <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
                 <h2 className="text-2xl font-bold mb-6 text-center">Profile</h2>
                 {user ? (
@@ -53,6 +65,9 @@ const Profile: React.FC = () => {
                 ) : (
                     <p className="text-red-500">No user information available</p>
                 )}
+                <button onClick={toLeaderboard}>
+                    Leaderboard
+                </button>
                 <button onClick={handleAddReceipt} className="w-full bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition duration-300">
                     Add Receipt
                 </button>
