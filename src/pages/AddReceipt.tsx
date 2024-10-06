@@ -80,31 +80,52 @@ const ReceiptOCR: React.FC = () => {
     };
 
     return (
-        <div className="flex flex-col items-center justify-center bg-gray-100 p-6">
+        <div className="flex flex-col items-center justify-center bg-white-100 p-6" 
+        style={{backgroundImage: `url('')`}}
+        >
             <h1 className="text-3xl font-bold mb-6 text-gray-800">Receipt OCR</h1>
 
-            <div className="mb-6">
+            <p className="text-gray-600 mb-6">Drag & drop a file to upload or choose from your computer.</p>
+
+            {/* Drag-and-Drop Box */}
+            <div
+                className="w-full max-w-lg border-2 border-dashed border-gray-300 rounded-lg bg-fill bg-center flex flex-col items-center justify-center hover:border-green-500 transition-colors duration-300"
+                style={{
+                    backgroundImage: `url('src/assets/9812024.png')`,
+                    minHeight: '400px',  // Ensure the box is at least 400px tall
+                    minWidth: '512px',   // Ensure the box is at least 512px wide
+                }}
+            >
+                {/* Cloud Upload Icon */}
+                <div className="h-12 w-12 text-gray-400 mb-4" />
+            </div>
+
+            {/* Flex Container for Choose File and Extract Text Buttons */}
+            <div className="flex mt-6 space-x-4">
+                <label
+                    htmlFor="file-upload"
+                    className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md cursor-pointer"
+                >
+                    Choose File
+                </label>
                 <input
+                    id="file-upload"
                     type="file"
                     onChange={handleImageUpload}
                     accept="image/*"
-                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4
-                     file:rounded-full file:border-0
-                     file:text-sm file:font-semibold
-                     file:bg-blue-100 file:text-blue-700
-                     hover:file:bg-blue-200"
+                    className="hidden"
                 />
-            </div>
 
-            <button
-                onClick={handleExtractText}
-                disabled={!image || loading}
-                className={`px-4 py-2 rounded-md text-white font-semibold 
-          ${loading || !image ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}
-        `}
-            >
-                {loading ? 'Processing...' : 'Extract Text'}
-            </button>
+                <button
+                    onClick={handleExtractText}
+                    disabled={!image || loading}
+                    className={`px-4 py-2 rounded-md text-white font-semibold
+                    ${loading || !image ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}
+                    `}
+                >
+                    {loading ? 'Processing...' : 'Extract Text'}
+                </button>
+            </div>
 
             <div className={"flex  items-center"}>
                 {image && (
@@ -116,19 +137,30 @@ const ReceiptOCR: React.FC = () => {
 
                 {text && (
                     <div className="mt-6 w-full max-w-lg bg-white p-4 rounded-lg shadow-md">
-                        <h3 className="text-lg font-semibold text-gray-700 mb-2">Extracted Text:</h3>
-                        <p className="text-gray-600 whitespace-pre-line">{text}</p>
-
-                        {/* Save Button */}
-                        <button
-                            onClick={handleSaveText}
-                            disabled={saving || isSaved} // Disable button if saving or already saved
-                            className={`mt-4 px-4 py-2 rounded-md text-white font-semibold 
-                            ${saving || isSaved ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'}
-                          `}
+                        {/* Center the title */}
+                        <h3 className="text-lg font-semibold text-gray-700 mb-2 text-center">Extracted Text:</h3>
+                        
+                        {/* Center the text */}
+                        <div
+                            className="text-gray-600 whitespace-pre-line overflow-y-auto text-center"
+                            style={{ maxHeight: '200px' }}  // Adjust the height as needed
                         >
-                            {saving ? 'Saving...' : isSaved ? 'Saved' : 'Save'}
-                        </button>
+                            {text}
+                        </div>
+
+                        {/* Save Button (Centered) */}
+                        <div className="flex justify-center mt-4">  
+                            <button
+                                onClick={handleSaveText}
+                                disabled={saving || isSaved}
+                                className={`px-4 py-2 rounded-md text-white font-semibold
+                                ${saving || isSaved ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'}
+                                `}
+                            >
+                                {saving ? 'Saving...' : isSaved ? 'Saved' : 'Save'}
+                            </button>
+                        </div>
+
                         {message && <p className="mt-2 text-center text-green-500">{message}</p>}
                     </div>
                 )}
