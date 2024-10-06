@@ -68,6 +68,40 @@ app.post('/login', async (req, res) => {
     }
 });
 
+app.post('/addReceipt', async (req, res) => {
+    console.log('Request Body:', req.body); // Add this line for debugging
+    const { email, text } = req.body; // Expecting email and text in the request body
+
+    // Check if email and text are present
+    if (!email || !text) {
+        return res.status(400).json({ message: 'Email and text are required' });
+    }
+
+    try {
+        // Find the user by email
+        const user = await User.findOne({ email });
+
+        // Check if user exists
+        if (!user) {
+            return res.status(400).json({ message: 'User not found' });
+        }
+        console.log(user)
+        // Add the receipt (receipt text) to the user's receipts array
+        user.receipts.push({ text, date: new Date() });  // Assuming receipts contain 'text' and 'date'
+        console.log(user.receipts)
+
+        // Save the updated user with the new receipt
+        await user.save();
+
+        // Send success response
+        res.status(201).json({ message: 'Receipt added successfully', user });
+    } catch (error) {
+        console.error('Error adding receipt:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+
 
 // Start the server
 app.listen(port, () => {
