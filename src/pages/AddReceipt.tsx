@@ -13,10 +13,15 @@ const ReceiptOCR: React.FC = () => {
     const user: User | null = location.state?.user || JSON.parse(localStorage.getItem('user') || 'null');
     const [image, setImage] = useState<string | null>(null);
     const [text, setText] = useState<string>('');
+    const [carbonScore, setCarbonScore] = useState<number | null>(null);
+    const [cleanedText, setCleanedText] = useState<string>('');
     const [loading, setLoading] = useState<boolean>(false);
     const [saving, setSaving] = useState<boolean>(false);
-    const [isSaved, setIsSaved] = useState<boolean>(false); // New state for tracking save status
+    const [isSaved, setIsSaved] = useState<boolean>(false);
     const [message, setMessage] = useState<string>('');
+    
+
+    const openAiApiKey = import.meta.env.VITE_OPENAI_API_KEY;
 
     // Handle image file input change
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -48,11 +53,111 @@ const ReceiptOCR: React.FC = () => {
                 setText(text);
                 setLoading(false);
                 setIsSaved(false); // Reset the saved state when new text is extracted
+
+                // Step 1: Clean up text and fetch carbon score using OpenAI API
+                fetchCleanedTextAndCarbonScore(text);
             })
             .catch((err) => {
                 console.error(err);
                 setLoading(false);
             });
+    };
+
+    // Exponential Backoff calculation
+    const calculateBackoff = (retryCount: number) => {
+        return Math.pow(2, retryCount) * 1000; // Exponential backoff (1s, 2s, 4s, etc.)
+    };
+
+    // Fetch cleaned text and carbon footprint using OpenAI API
+    const fetchCleanedTextAndCarbonScore = async (rawText: string) => {
+        const openAiApiKey = import.meta.env.VITE_OPENAI_API_KEY;
+    
+        const requestOpenAI = async (retryCount = 0) => {
+            try {
+                const prompt = `Do not repeat the prompt in any way, only do what instructed.
+                Use your own methods to compute a carbon footprint score from 0 - 100, 
+                0 being terrible and 100 being carbon neutral. NEW LINE
+                Now give a calculated guess on the kgs of carbon emissions saved or carbon emission wasted (
+                depending on carbonfootprint score of everything averaged out), taking into account the store and items
+                ensure you give a number or range of kgs that could be saved more. Give a reason why you gave the score.
+                An example would be: 
+                "Carbon foodprint score: 38 NEW LINE
+                Number of kgs of carbon emission (Either saved or wasted -> calculate this from above): 50kg wasted NEW LINE
+                Reason for score: Too much meat (specifics please), not enough organic produce (more specific than this with numbers)" NEW LINE
+                After this, write a 2 sentence recommendation about how can the user decrease their carbon footprint and
+                increase their score.
+                An example would be: 
+                Recommendation: Buy more organic produce (either double, triple, etc.) and stop buying red meat (More specific than this but a recommendation is required)
+                Format:
+                Carbon foodprint score: ...
+                NEW LINE
+                Number of kgs of carbon emission: ...
+                NEW LINE
+                Recommendation to increase your score: ...
+
+                here is the json format:
+                {
+                score: "",
+                sumary: "",
+                recommendations: "",
+                }
+                `;
+    
+                const openAIResponse = await axios.post(
+                    'https://api.openai.com/v1/chat/completions',
+                    {
+                        model: 'gpt-4o',
+                        messages: [{ role: 'user', content: prompt }],
+                        temperature: 0.7,
+                        max_tokens: 5000,
+                    },
+                    {
+                        headers: {
+                            'Content-Type': 'application/json',
+                            Authorization: `Bearer ${openAiApiKey}`,
+                        },
+                    }
+                )
+                const response = JSON.parse(openAIResponse);
+    
+                // Instead of further processing, directly set the cleaned text and score based on the OpenAI response
+                const responseText = openAIResponse.data.choices[0].message.content;
+                setCleanedText(responseText);  // Display the full response as cleaned text
+                // Optionally, handle carbonScore extraction if it's structured explicitly in the response
+    
+            } catch (error) {
+                if (error.response?.status === 429 && retryCount < 5) {
+                    const backoff = calculateBackoff(retryCount);
+                    console.log(`Rate limit exceeded. Retrying in ${backoff / 1000} seconds...`);
+                    setTimeout(() => requestOpenAI(retryCount + 1), backoff);
+                } else {
+                    console.error('Error fetching cleaned text and carbon score:', error);
+                    setMessage('Error fetching carbon footprint');
+                }
+            }
+        };
+    
+        requestOpenAI();
+    };
+    
+
+    // Process the OpenAI API response to extract the cleaned list and carbon score
+    const processOpenAIResponse = (response: string) => {
+        // Assume the response comes as cleaned text followed by scores
+        const [cleaned, ...rest] = response.split('\n').filter(line => line.trim());
+        
+        // The first part of the response contains the cleaned text
+        setCleanedText(cleaned);
+
+        // Extract scores from the rest of the response
+        const scores = rest.map(line => {
+            const match = line.match(/(\d+)/);
+            return match ? parseInt(match[0]) : 50; // Default to 50 if no score found
+        });
+
+        // Calculate the average carbon footprint score
+        const averageScore = scores.reduce((acc, score) => acc + score, 0) / scores.length;
+        setCarbonScore(averageScore);
     };
 
     // Save the extracted text to MongoDB
@@ -62,7 +167,8 @@ const ReceiptOCR: React.FC = () => {
         setSaving(true);
         try {
             const response = await axios.post('http://localhost:3000/addReceipt', {
-                email, text
+                email,
+                text
             });
 
             if (response.status === 201) {
@@ -80,27 +186,21 @@ const ReceiptOCR: React.FC = () => {
     };
 
     return (
-        <div className="flex flex-col items-center justify-center bg-white-100 p-6" 
-        style={{backgroundImage: `url('')`}}
-        >
+        <div className="flex flex-col items-center justify-center bg-white-100 p-6">
             <h1 className="text-3xl font-bold mb-6 text-gray-800">Receipt OCR</h1>
 
             <p className="text-gray-600 mb-6">Drag & drop a file to upload or choose from your computer.</p>
 
-            {/* Drag-and-Drop Box */}
             <div
                 className="w-full max-w-lg border-2 border-dashed border-gray-300 rounded-lg bg-fill bg-center flex flex-col items-center justify-center hover:border-green-500 transition-colors duration-300"
                 style={{
-                    backgroundImage: `url('src/assets/9812024.png')`,
-                    minHeight: '400px',  // Ensure the box is at least 400px tall
-                    minWidth: '512px',   // Ensure the box is at least 512px wide
+                    minHeight: '400px',
+                    minWidth: '512px',
                 }}
             >
-                {/* Cloud Upload Icon */}
                 <div className="h-12 w-12 text-gray-400 mb-4" />
             </div>
 
-            {/* Flex Container for Choose File and Extract Text Buttons */}
             <div className="flex mt-6 space-x-4">
                 <label
                     htmlFor="file-upload"
@@ -127,7 +227,7 @@ const ReceiptOCR: React.FC = () => {
                 </button>
             </div>
 
-            <div className={"flex  items-center"}>
+            <div className={"flex items-center"}>
                 {image && (
                     <div className="mt-6">
                         <h3 className="text-lg font-semibold text-gray-700 mb-2">Uploaded Image:</h3>
@@ -135,38 +235,25 @@ const ReceiptOCR: React.FC = () => {
                     </div>
                 )}
 
-                {text && (
+                {cleanedText && (
                     <div className="mt-6 w-full max-w-lg bg-white p-4 rounded-lg shadow-md">
-                        {/* Center the title */}
-                        <h3 className="text-lg font-semibold text-gray-700 mb-2 text-center">Extracted Text:</h3>
-                        
-                        {/* Center the text */}
-                        <div
-                            className="text-gray-600 whitespace-pre-line overflow-y-auto text-center"
-                            style={{ maxHeight: '200px' }}  // Adjust the height as needed
-                        >
-                            {text}
-                        </div>
-
-                        {/* Save Button (Centered) */}
-                        <div className="flex justify-center mt-4">  
-                            <button
-                                onClick={handleSaveText}
-                                disabled={saving || isSaved}
-                                className={`px-4 py-2 rounded-md text-white font-semibold
-                                ${saving || isSaved ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'}
-                                `}
-                            >
-                                {saving ? 'Saving...' : isSaved ? 'Saved' : 'Save'}
-                            </button>
-                        </div>
-
-                        {message && <p className="mt-2 text-center text-green-500">{message}</p>}
+                        <h3 className="text-lg font-semibold text-gray-700 mb-2 text-center">Cleaned Receipt Text:</h3>
+                        <p className="text-gray-600 text-center">{cleanedText}</p>
                     </div>
                 )}
+
+                {carbonScore !== null && (
+                    <div className="mt-6 w-full max-w-lg bg-white p-4 rounded-lg shadow-md">
+                        <h3 className="text-lg font-semibold text-gray-700 mb-2 text-center">Carbon Footprint Score:</h3>
+                        <p className="text-gray-600 text-center">{carbonScore.toFixed(2)} / 100</p>
+                    </div>
+                )}
+
+                {message && <p className="mt-2 text-center text-red-500">{message}</p>}
             </div>
         </div>
     );
 };
 
 export default ReceiptOCR;
+

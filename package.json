@@ -20,6 +20,7 @@
     "express": "^4.21.0",
     "leaflet": "^1.9.4",
     "mongoose": "^8.7.0",
+    "openai": "^4.67.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-leaflet": "^4.2.1",
