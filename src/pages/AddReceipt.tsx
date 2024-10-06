@@ -28,7 +28,7 @@ const ReceiptOCR: React.FC = () => {
     const [message, setMessage] = useState<string>('');
     const navigate = useNavigate();
 
-    const openAiApiKey = import.meta.env.VITE_OPENAI_API_KEY;
+    const openAiApiKey = meta.import.VITE_OPENAI_API_KEY;
 
     // Handle image file input change
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -102,7 +102,6 @@ const ReceiptOCR: React.FC = () => {
                 Do not add any style or formatting to the text.
                 Make sure the json is valid and correctly formatted.
                 `;
-
                 const openAIResponse = await axios.post(
                     'https://api.openai.com/v1/chat/completions',
                     {
@@ -117,21 +116,12 @@ const ReceiptOCR: React.FC = () => {
                             Authorization: `Bearer ${openAiApiKey}`,
                         },
                     }
-                )
+                );
 
                 const jsonResponse = JSON.parse(openAIResponse.data.choices[0].message.content);
-
-                const summary = jsonResponse.scoreSummary;
-                const score = jsonResponse.score;
-                const recommendations = jsonResponse.recommendations;
-                setScoreSummary(summary);
-                setCarbonFootprint(score);
-                setRecommendations(recommendations);
-
-                // Instead of further processing, directly set the cleaned text and score based on the OpenAI response
-                const responseText = openAIResponse.data.choices[0].message.content;
-                setCleanedText(responseText);  // Display the full response as cleaned text
-
+                setScoreSummary(jsonResponse.scoreSummary);
+                setCarbonFootprint(jsonResponse.score);
+                setRecommendations(jsonResponse.recommendations);
             } catch (error) {
                 if (error.response?.status === 429 && retryCount < 5) {
                     const backoff = calculateBackoff(retryCount);
@@ -160,18 +150,18 @@ const ReceiptOCR: React.FC = () => {
             .then(() => {
                 setIsSaved(true);
                 setSaving(false);
+                setMessage('Receipt saved successfully!');
             })
             .catch((error) => {
                 console.error('Error saving receipt:', error);
                 setMessage('Error saving receipt');
                 setSaving(false);
-
             });
     }
 
     const handleProfile = () => {
         navigate('/profile');
-    }
+    };
 
     return (
         <div className="flex flex-col items-center justify-center bg-white p-6">
@@ -248,9 +238,9 @@ const ReceiptOCR: React.FC = () => {
                 </div>
             )}
 
-            {message && <p className="mt-2 text-center text-red-500">{message}</p>}
-            <button onClick={handleSave} className="w-full bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition duration-300">
-                Save
+            {message && <p className="mt-2 text-center text-green-500">{message}</p>}
+            <button onClick={handleSave} className="mt-4 w-full bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition duration-300">
+                {saving ? 'Saving...' : 'Save'}
             </button>
         </div>
     );
